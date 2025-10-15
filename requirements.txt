@@ -1,4 +1,5 @@
 streamlit==1.30.0
 SpeechRecognition==3.14.3
-PyAudio==0.2.13
+sounddevice==0.4.6
+soundfile==0.12.1
 nltk==3.8.1

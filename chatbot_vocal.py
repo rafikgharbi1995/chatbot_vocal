@@ -1,5 +1,9 @@
 import streamlit as st
 import speech_recognition as sr
+import sounddevice as sd
+import soundfile as sf
+import numpy as np
+import tempfile
 import nltk
 from nltk.chat.util import Chat, reflections
 
@@ -17,15 +21,27 @@ pairs = [
 
 chatbot = Chat(pairs, reflections)
 
-# Fonction pour la reconnaissance vocale
+# Fonction pour la reconnaissance vocale SANS PyAudio
 def recognize_speech():
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("Parlez maintenant...")
-        audio = r.listen(source)
+    samplerate = 16000
+    duration = 5  # secondes
+    st.info("Parlez maintenant...")
+
+    # Enregistrer l'audio avec sounddevice
+    recording = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=1, dtype='int16')
+    sd.wait()
+
+    # Sauvegarde dans un fichier temporaire WAV
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmpfile:
+        sf.write(tmpfile.name, recording, samplerate)
+        tmpfile_path = tmpfile.name
+
+    # Utiliser SpeechRecognition sur le fichier audio
+    recognizer = sr.Recognizer()
+    with sr.AudioFile(tmpfile_path) as source:
+        audio = recognizer.record(source)
         try:
-            text = r.recognize_google(audio, language="fr-FR")
-            return text
+            return recognizer.recognize_google(audio, language="fr-FR")
         except sr.UnknownValueError:
             return "Désolé, je n'ai pas compris."
         except sr.RequestError:
